@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#020617">
+    <title>Eng. Ali POS PRO</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+        body { 
+            font-family: 'Cairo', sans-serif; 
+            background-color: #020617; 
+            color: #f8fafc; 
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .glass { background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.05); }
+        .tab-active { background: #3b82f6; color: white !important; box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); }
+        input { background: #0f172a !important; color: white !important; border: 1px solid #1e293b !important; }
+        .card-shadow { box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5); }
+        html, body { overscroll-behavior-y: none; }
+        main { flex: 1; overflow-y: auto; scrollbar-width: none; }
+        main::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- شاشة الدخول -->
+    <div id="login-screen" class="fixed inset-0 z-[9999] bg-slate-950 flex items-center justify-center p-6">
+        <div class="bg-slate-900 w-full max-w-sm p-8 rounded-[2.5rem] shadow-2xl text-center space-y-6 border border-slate-800">
+            <div class="bg-blue-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-blue-900/50">
+                <i data-lucide="shield-check" class="text-white w-8 h-8"></i>
+            </div>
+            <div>
+                <h2 class="text-xl font-bold">الدخول الآمن</h2>
+                <p class="text-[9px] text-blue-400 mt-1 font-bold tracking-widest uppercase">ENG. ALI KATAA ALMUSAWI</p>
+            </div>
+            <div class="space-y-4">
+                <input type="password" id="login-pass" placeholder="••••" class="w-full p-4 rounded-xl text-center font-bold text-2xl tracking-[0.3em] outline-none border-2 focus:border-blue-500 transition-all">
+                <button onclick="App.login()" class="w-full bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-xl font-bold text-md transition-all active:scale-95">تفعيل الوصول</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- التطبيق الرئيسي -->
+    <div id="main-app" class="hidden contents">
+        <header class="p-3 px-5 flex justify-between items-center sticky top-0 z-50 glass">
+            <div>
+                <h1 class="text-md font-bold leading-tight">نظام المبيعات <span class="text-blue-500 text-[10px] font-black">PRO</span></h1>
+                <p class="text-[7px] font-bold text-slate-500 uppercase tracking-tighter">DESIGN & DEV BY ENG. ALI KATAA ALMUSAWI</p>
+            </div>
+            <button onclick="location.reload()" class="p-2 bg-slate-800 text-red-400 rounded-lg active:bg-red-900/20"><i data-lucide="power" class="w-4 h-4"></i></button>
+        </header>
+
+        <main class="p-3 max-w-md mx-auto space-y-4">
+            <!-- شاشة الرئيسية -->
+            <div id="view-home" class="space-y-4">
+                <div class="grid grid-cols-2 gap-3 text-center">
+                    <div class="glass p-3 rounded-[1.5rem] card-shadow">
+                        <p class="text-[8px] text-slate-500 font-bold mb-0.5 uppercase">إجمالي القطع</p>
+                        <h2 id="total-qty" class="text-xl font-black">0</h2>
+                    </div>
+                    <div class="glass p-3 rounded-[1.5rem] card-shadow">
+                        <p class="text-[8px] text-slate-500 font-bold mb-0.5 uppercase">مبيعات اليوم</p>
+                        <h2 id="daily-sales" class="text-xl font-black text-emerald-400">0</h2>
+                    </div>
+                </div>
+
+                <div class="bg-blue-600 p-6 rounded-[2rem] text-center space-y-3 shadow-xl shadow-blue-900/40 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-2 opacity-10"><i data-lucide="fingerprint" class="w-12 h-12"></i></div>
+                    <i data-lucide="scan-barcode" class="w-10 h-10 mx-auto text-white"></i>
+                    <h3 class="font-bold text-lg text-white">البيع المباشر</h3>
+                    <label class="block w-full bg-white text-blue-600 p-3.5 rounded-xl font-bold text-md cursor-pointer active:scale-95 transition-all shadow-lg">
+                        فتح الكاميرا للبيع
+                        <input type="file" accept="image/*" capture="environment" class="hidden" onchange="App.scan(this, 'sell')">
+                    </label>
+                </div>
+
+                <div class="px-2 flex justify-between items-center">
+                    <h3 class="font-bold text-[11px] text-slate-400">سجل النشاط الأخير</h3>
+                    <i data-lucide="history" class="w-3.5 h-3.5 text-slate-600"></i>
+                </div>
+                <div id="log-list" class="space-y-1.5 overflow-y-auto max-h-[180px] pb-4"></div>
+            </div>
+
+            <!-- شاشة المخزن -->
+            <div id="view-list" class="hidden space-y-3">
+                <div class="flex justify-between items-center px-1">
+                    <h2 class="text-lg font-bold">المخزون</h2>
+                    <label class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-[10px] font-bold cursor-pointer shadow-lg active:scale-95 transition-all">
+                        + إضافة صنف
+                        <input type="file" accept="image/*" capture="environment" class="hidden" onchange="App.scan(this, 'add')">
+                    </label>
+                </div>
+                <div id="inventory-list" class="space-y-2 pb-10"></div>
+            </div>
+
+            <!-- شاشة الإعدادات -->
+            <div id="view-settings" class="hidden space-y-4 pb-10">
+                <div class="glass p-4 rounded-[2rem] space-y-3">
+                    <h3 class="text-xs font-bold text-emerald-400 flex items-center gap-2"><i data-lucide="whatsapp" class="w-3.5 h-3.5"></i> إرسال الفاتورة</h3>
+                    <input type="tel" id="owner-phone" placeholder="9647XXXXXXXX" class="w-full p-3 rounded-xl text-xs outline-none border border-slate-700">
+                    <button onclick="App.saveConfig()" class="w-full bg-emerald-600 text-white p-3 rounded-xl text-xs font-bold active:bg-emerald-700">حفظ الرقم</button>
+                </div>
+
+                <div class="glass p-4 rounded-[2rem] space-y-3">
+                    <h3 class="text-xs font-bold text-blue-400 flex items-center gap-2"><i data-lucide="lock" class="w-3.5 h-3.5"></i> حماية النظام</h3>
+                    <input type="password" id="old-pass" placeholder="الرمز الحالي" class="w-full p-3 rounded-xl text-xs outline-none">
+                    <input type="password" id="new-pass" placeholder="الرمز الجديد" class="w-full p-3 rounded-xl text-xs outline-none">
+                    <button onclick="App.updatePass()" class="w-full bg-blue-600 text-white p-3 rounded-xl text-xs font-bold">تحديث الرمز</button>
+                </div>
+
+                <div class="glass p-4 rounded-[2rem] space-y-3 text-center">
+                    <h3 class="text-xs font-bold text-slate-300 font-bold">النسخ الاحتياطي</h3>
+                    <div class="grid grid-cols-2 gap-2 text-[9px]">
+                        <button onclick="App.exportData()" class="bg-slate-800 hover:bg-slate-700 p-3 rounded-xl font-bold flex flex-col items-center gap-1">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i> تصدير
+                        </button>
+                        <label class="bg-slate-800 hover:bg-slate-700 p-3 rounded-xl font-bold cursor-pointer flex flex-col items-center gap-1">
+                            <i data-lucide="upload" class="w-3.5 h-3.5"></i> استيراد
+                            <input type="file" accept=".json" class="hidden" onchange="App.importData(this)">
+                        </label>
+                    </div>
+                    <button onclick="App.safeAction(() => App.resetSystem())" class="w-full bg-red-900/10 text-red-500 p-3 rounded-xl font-bold text-[9px] mt-1 border border-red-500/20">تهيئة كاملة للنظام</button>
+                </div>
+            </div>
+        </main>
+
+        <!-- التنقل السفلي -->
+        <nav class="fixed bottom-0 left-0 right-0 glass p-3 flex justify-around items-center z-[100] border-t border-slate-800 pb-6">
+            <button onclick="App.tab('home')" id="btn-home" class="p-3 rounded-xl tab-active transition-all"><i data-lucide="home" class="w-5 h-5"></i></button>
+            <button onclick="App.tab('list')" id="btn-list" class="p-3 rounded-xl text-slate-500 transition-all"><i data-lucide="box" class="w-5 h-5"></i></button>
+            <button onclick="App.tab('settings')" id="btn-settings" class="p-3 rounded-xl text-slate-500 transition-all"><i data-lucide="settings" class="w-5 h-5"></i></button>
+        </nav>
+    </div>
+
+    <!-- نافذة الأمان -->
+    <div id="auth-modal" class="fixed inset-0 z-[10000] bg-slate-950/95 hidden flex items-center justify-center p-8 backdrop-blur-lg">
+        <div class="bg-slate-900 w-full max-w-xs p-8 rounded-[2rem] text-center space-y-4 border border-slate-800 shadow-2xl">
+            <div class="bg-red-600 w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-2"><i data-lucide="shield-alert" class="text-white w-6 h-6"></i></div>
+            <h3 class="font-bold text-md">تحقق الأمان</h3>
+            <input type="password" id="confirm-code" placeholder="••••" class="w-full p-3 rounded-xl text-center font-bold text-xl outline-none border border-slate-700 bg-slate-950">
+            <div class="flex gap-2">
+                <button onclick="App.executeAction()" class="flex-1 bg-red-600 text-white p-3 rounded-xl font-bold text-sm">تأكيد</button>
+                <button onclick="App.closeAuth()" class="flex-1 bg-slate-800 text-slate-400 p-3 rounded-xl font-bold text-sm">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة الصنف -->
+    <div id="product-modal" class="fixed inset-0 z-[5000] bg-black/90 hidden flex items-center justify-center p-6 backdrop-blur-md">
+        <div class="bg-slate-900 w-full max-w-sm rounded-[2.5rem] p-8 space-y-5 border border-slate-800 shadow-2xl">
+            <h3 class="text-center font-bold text-lg">بيانات الصنف</h3>
+            <div id="scan-res" class="text-center text-[10px] text-blue-400 font-mono tracking-widest bg-blue-900/20 py-2 rounded-xl border border-blue-500/20"></div>
+            <div class="space-y-3">
+                <input type="text" id="p-name" placeholder="اسم الصنف" class="w-full p-3 rounded-lg outline-none font-bold text-md">
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="number" id="p-price" placeholder="السعر" class="p-3 rounded-lg outline-none font-bold text-center text-sm">
+                    <input type="number" id="p-qty" placeholder="الكمية" value="1" class="p-3 rounded-lg outline-none font-bold text-center text-sm">
+                </div>
+            </div>
+            <button onclick="App.confirmProduct()" class="w-full bg-blue-600 text-white p-4 rounded-xl font-bold shadow-lg active:scale-95 transition-all text-sm">حفظ في المخزن</button>
+            <button onclick="App.hideModal()" class="w-full text-slate-500 text-[10px] font-bold uppercase py-1">تراجع</button>
+        </div>
+    </div>
+
+    <div id="reader" class="hidden"></div>
+
+    <script>
+        const App = (() => {
+            let db = JSON.parse(localStorage.getItem('ali_pos_db')) || [];
+            let logs = JSON.parse(localStorage.getItem('ali_pos_logs')) || [];
+            let config = JSON.parse(localStorage.getItem('ali_pos_cfg')) || { pass: '2025', phone: '' };
+            let pendingAction = null;
+            const scanner = new Html5Qrcode("reader");
+
+            const save = () => {
+                localStorage.setItem('ali_pos_db', JSON.stringify(db));
+                localStorage.setItem('ali_pos_logs', JSON.stringify(logs));
+                localStorage.setItem('ali_pos_cfg', JSON.stringify(config));
+                refreshUI();
+            };
+
+            const refreshUI = () => {
+                document.getElementById('total-qty').innerText = db.reduce((a, b) => a + parseInt(b.qty), 0);
+                document.getElementById('daily-sales').innerText = logs.filter(l => l.msg.includes('مبيع') && l.date === new Date().toLocaleDateString()).length;
+                
+                document.getElementById('log-list').innerHTML = logs.slice(0, 15).map(l => `
+                    <div class="glass p-3 rounded-xl flex justify-between items-center text-[9px] border-r-4 ${l.msg.includes('مبيع') ? 'border-emerald-500' : 'border-blue-500'}">
+                        <span class="font-bold text-slate-200">${l.msg}</span>
+                        <span class="opacity-40 font-mono text-[7px]">${l.time}</span>
+                    </div>
+                `).join('');
+            };
+
+            return {
+                init: () => {
+                    lucide.createIcons();
+                    document.getElementById('owner-phone').value = config.phone;
+                    refreshUI();
+                },
+                login: () => {
+                    if(document.getElementById('login-pass').value === config.pass) {
+                        document.getElementById('login-screen').classList.add('hidden');
+                        document.getElementById('main-app').classList.remove('hidden');
+                    } else alert("الرمز غير صحيح");
+                },
+                tab: (name) => {
+                    ['home', 'list', 'settings'].forEach(v => {
+                        document.getElementById('view-' + v).classList.add('hidden');
+                        document.getElementById('btn-' + v).classList.remove('tab-active');
+                        document.getElementById('btn-' + v).classList.add('text-slate-500');
+                    });
+                    document.getElementById('view-' + name).classList.remove('hidden');
+                    document.getElementById('btn-' + name).classList.add('tab-active');
+                    document.getElementById('btn-' + name).classList.remove('text-slate-500');
+                    if(name === 'list') App.renderInventory();
+                    lucide.createIcons();
+                },
+                scan: async (input, type) => {
+                    if(!input.files.length) return;
+                    try {
+                        const code = await scanner.scanFile(input.files[0], true);
+                        if(type === 'add') {
+                            const item = db.find(i => i.code === code);
+                            document.getElementById('scan-res').innerText = code;
+                            document.getElementById('p-name').value = item ? item.name : '';
+                            document.getElementById('p-price').value = item ? item.price : '';
+                            document.getElementById('product-modal').classList.remove('hidden');
+                        } else {
+                            App.sell(code);
+                        }
+                    } catch(e) { alert("عذراً، لم أتمكن من قراءة الباركود"); }
+                    input.value = '';
+                },
+                confirmProduct: () => {
+                    const code = document.getElementById('scan-res').innerText;
+                    const name = document.getElementById('p-name').value;
+                    const price = document.getElementById('p-price').value;
+                    const qty = parseInt(document.getElementById('p-qty').value);
+                    if(!name || !price) return;
+                    const idx = db.findIndex(i => i.code === code);
+                    if(idx > -1) { db[idx].qty += qty; db[idx].price = price; }
+                    else db.push({ code, name, price, qty });
+                    logs.unshift({ msg: `تم تزويد: ${name}`, time: new Date().toLocaleTimeString('ar-EG'), date: new Date().toLocaleDateString() });
+                    save(); App.hideModal();
+                },
+                sell: (code) => {
+                    const idx = db.findIndex(i => i.code === code);
+                    if(idx === -1 || db[idx].qty <= 0) return alert("هذا الصنف غير متوفر");
+                    db[idx].qty--;
+                    const item = db[idx];
+                    logs.unshift({ msg: `مبيع: ${item.name}`, time: new Date().toLocaleTimeString('ar-EG'), date: new Date().toLocaleDateString() });
+                    save();
+                    if(config.phone) {
+                        const msg = `*نظام مبيعات المهندس علي*%0A*فاتورة جديدة*%0A------------------%0Aالصنف: ${item.name}%0Aالسعر: ${item.price} د.ع%0Aالمتبقي في المخزن: ${item.qty}%0Aالتاريخ: ${new Date().toLocaleString('ar-EG')}`;
+                        window.open(`https://wa.me/${config.phone}?text=${msg}`, '_blank');
+                    }
+                },
+                renderInventory: () => {
+                    document.getElementById('inventory-list').innerHTML = db.length ? db.map(i => `
+                        <div class="glass p-3 rounded-2xl flex justify-between items-center border-b border-slate-800">
+                            <div>
+                                <p class="font-bold text-xs">${i.name}</p>
+                                <p class="text-blue-500 text-[9px] font-bold">${i.price} د.ع</p>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="bg-blue-600/20 text-blue-400 px-3 py-1 rounded-full text-[10px] font-black border border-blue-500/20">${i.qty}</span>
+                                <button onclick="App.safeAction(() => App.deleteItem('${i.code}'))" class="text-red-500/30 hover:text-red-500 p-1">
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `).join('') : '<p class="text-center text-slate-600 py-10 text-xs">المخزن فارغ</p>';
+                    lucide.createIcons();
+                },
+                deleteItem: (code) => { db = db.filter(i => i.code !== code); save(); App.renderInventory(); },
+                saveConfig: () => { config.phone = document.getElementById('owner-phone').value; save(); alert("تم الحفظ"); },
+                updatePass: () => {
+                    const old = document.getElementById('old-pass').value;
+                    if(old !== config.pass) return alert("الرمز القديم خطأ");
+                    config.pass = document.getElementById('new-pass').value;
+                    save(); alert("تم التحديث");
+                    document.getElementById('old-pass').value = '';
+                    document.getElementById('new-pass').value = '';
+                },
+                exportData: () => {
+                    const dataStr = JSON.stringify({db, logs, config});
+                    const blob = new Blob([dataStr], {type: 'application/json'});
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `backup_ali_pos_${new Date().toISOString().slice(0,10)}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                },
+                importData: (input) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const data = JSON.parse(e.target.result);
+                            if(data.db && data.config) {
+                                db = data.db; logs = data.logs || []; config = data.config;
+                                save(); alert("تم الاستعادة");
+                                location.reload();
+                            }
+                        } catch(err) { alert("الملف غير صالح"); }
+                    };
+                    reader.readAsText(input.files[0]);
+                },
+                resetSystem: () => { localStorage.clear(); location.reload(); },
+                safeAction: (fn) => { pendingAction = fn; document.getElementById('auth-modal').classList.remove('hidden'); },
+                executeAction: () => {
+                    if(document.getElementById('confirm-code').value === config.pass) {
+                        pendingAction(); App.closeAuth();
+                        document.getElementById('confirm-code').value = '';
+                    } else alert("الرمز خطأ");
+                },
+                closeAuth: () => { document.getElementById('auth-modal').classList.add('hidden'); },
+                hideModal: () => { document.getElementById('product-modal').classList.add('hidden'); }
+            };
+        })();
+
+        window.onload = App.init;
+    </script>
+</body>
+</html>
+
